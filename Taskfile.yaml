@@ -16,42 +16,9 @@ tasks:
   mkdir:
     desc: Create Build Dir
     cmds:
-      - mkdir -p build static/ruleset
+      - mkdir -p build
     status:
       - test -d build
-      - test -d static/ruleset
-  download-ruleset:
-    desc: Download Loyalsoldier RuleSet
-    cmds:
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.txt > static/ruleset/reject.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/icloud.txt > static/ruleset/icloud.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/apple.txt > static/ruleset/apple.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/google.txt > static/ruleset/google.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.txt > static/ruleset/proxy.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt > static/ruleset/direct.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt > static/ruleset/private.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/gfw.txt > static/ruleset/gfw.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/greatfire.txt > static/ruleset/greatfire.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/tld-not-cn.txt > static/ruleset/tld-not-cn.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/telegramcidr.txt > static/ruleset/telegramcidr.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/cncidr.txt > static/ruleset/cncidr.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt > static/ruleset/lancidr.yaml
-      - curl -sSL https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/applications.txt > static/ruleset/applications.yaml
-    status:
-      - test -f static/ruleset/reject.yaml
-      - test -f static/ruleset/icloud.yaml
-      - test -f static/ruleset/apple.yaml
-      - test -f static/ruleset/google.yaml
-      - test -f static/ruleset/proxy.yaml
-      - test -f static/ruleset/direct.yaml
-      - test -f static/ruleset/private.yaml
-      - test -f static/ruleset/gfw.yaml
-      - test -f static/ruleset/greatfire.yaml
-      - test -f static/ruleset/tld-not-cn.yaml
-      - test -f static/ruleset/telegramcidr.yaml
-      - test -f static/ruleset/cncidr.yaml
-      - test -f static/ruleset/lancidr.yaml
-      - test -f static/ruleset/applications.yaml
 
   download-mmdb:
     desc: Download GeoIP2-CN MMDB
@@ -96,7 +63,7 @@ tasks:
       CLASH_URL:
         sh: curl -sSL https://api.github.com/repos/Dreamacro/clash/releases/tags/premium | jq -r '.assets[].browser_download_url | select (. | test("clash-{{.PLATFORM}}-\\d{4}.*gz"))'
     cmds:
-      - curl -sSL {{.CLASH_URL}} > build/clash-{{.PLATFORM}}.gz
+      - curl -sSL https://release.dreamacro.workers.dev/latest/clash-{{.PLATFORM}}-latest.gz > build/clash-{{.PLATFORM}}.gz
       - gzip -d build/clash-{{.PLATFORM}}.gz
       - chmod +x build/clash-{{.PLATFORM}}
     status:
@@ -133,7 +100,6 @@ tasks:
     label: build-premium-{{.PLATFORM}}
     cmds:
       - task: mkdir
-      - task: download-ruleset
       - task: download-mmdb
       - task: build-premium-dashboard
       - task: download-clash-premium
@@ -150,7 +116,6 @@ tasks:
     label: build-meta-{{.PLATFORM}}
     cmds:
       - task: mkdir
-      - task: download-ruleset
       - task: download-mmdb
       - task: build-meta-dashboard
       - task: download-clash-meta
@@ -389,12 +354,6 @@ tasks:
   default:
     cmds:
       - rm -rf build static
-      - task: linux-386-premium
       - task: linux-amd64-premium
-      - task: linux-amd64-v3-premium
-      - task: linux-arm64-premium
       - rm -rf static/yacd static/official
-      - task: linux-amd64-meta
-      - task: linux-amd64-v3-meta
-      - task: linux-arm64-meta
       - rm -rf static
