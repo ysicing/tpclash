@@ -34,6 +34,7 @@ func ParseClashConf() (*ClashConf, error) {
 	dnsListen := viper.GetString("dns.listen")
 	fakeIPRange := viper.GetString("dns.fake-ip-range")
 	interfaceName := viper.GetString("interface-name")
+	autoDetectInterface := viper.GetBool("tun.auto-detect-interface")
 	tunEnabled := viper.GetBool("tun.enable")
 	tunAutoRoute := viper.GetBool("tun.auto-route")
 	tunEBPF := viper.GetStringSlice("ebpf.redirect-to-tun")
@@ -62,8 +63,8 @@ func ParseClashConf() (*ClashConf, error) {
 		return nil, fmt.Errorf("dns listening address parse failed(dns.listen): is not a valid IP address")
 	}
 
-	if interfaceName == "" {
-		return nil, fmt.Errorf("failed to parse clash interface name(interface-name): interface-name must be set")
+	if interfaceName == "" && !autoDetectInterface {
+		return nil, fmt.Errorf("[conf] failed to parse clash interface name(interface-name): interface-name or tun.auto-detect-interface must be set")
 	}
 
 	if fakeIPRange == "" {
