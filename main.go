@@ -22,10 +22,9 @@ import (
 )
 
 var (
-	conf        TPClashConf
-	clashConf   *ClashConf
-	proxyMode   ProxyMode
-	arpHijacker *ARPHijacker
+	conf      TPClashConf
+	clashConf *ClashConf
+	proxyMode ProxyMode
 )
 
 var printVer bool
@@ -46,15 +45,10 @@ var rootCmd = &cobra.Command{
 
 		logrus.Info("[main] starting tpclash...")
 
-		uid, gid := getUserIDs(conf.ClashUser)
 		cmd := exec.Command(filepath.Join(conf.ClashHome, clashBiName), "-f", conf.ClashConfig, "-d", conf.ClashHome, "-ext-ui", filepath.Join(conf.ClashHome, conf.ClashUI))
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.SysProcAttr = &syscall.SysProcAttr{
-			Credential: &syscall.Credential{
-				Uid: uid,
-				Gid: gid,
-			},
 			AmbientCaps: []uintptr{CAP_NET_BIND_SERVICE, CAP_NET_ADMIN, CAP_NET_RAW},
 		}
 
@@ -79,12 +73,6 @@ var rootCmd = &cobra.Command{
 
 		if err = proxyMode.EnableProxy(); err != nil {
 			logrus.Fatalf("failed to enable proxy: %v", err)
-		}
-
-		if conf.HijackIP != nil {
-			if err = arpHijacker.hijack(ctx); err != nil {
-				logrus.Fatalf("failed to start arp hijack: %v", err)
-			}
 		}
 
 		<-time.After(3 * time.Second)
@@ -116,8 +104,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&conf.ClashUI, "ui", "u", "yacd", "clash dashboard(official|yacd)")
 	rootCmd.PersistentFlags().BoolVar(&conf.Debug, "debug", false, "enable debug log")
 
-	rootCmd.PersistentFlags().StringVar(&conf.ClashUser, "clash-user", defaultClashUser, "clash runtime user")
-	rootCmd.PersistentFlags().IPSliceVar(&conf.HijackIP, "hijack-ip", nil, "hijack target IP traffic")
 	rootCmd.PersistentFlags().BoolVar(&conf.DisableExtract, "disable-extract", false, "disable extract files")
 	rootCmd.PersistentFlags().BoolVar(&conf.AutoExit, "test", false, "run in test mode, exit automatically after 5 minutes")
 
@@ -136,7 +122,6 @@ func tpClashInit() {
 	}
 
 	// copy static files
-	ensureUser()
 	ensureClashFiles()
 	ensureSysctl()
 
@@ -181,8 +166,6 @@ func tpClashInit() {
 	if proxyMode, err = NewProxyMode(clashConf, &conf); err != nil {
 		logrus.Fatal(err)
 	}
-
-	arpHijacker = NewARPHijacker(clashConf, &conf)
 
 	if clashConf.Debug || conf.Debug {
 		logrus.SetLevel(logrus.DebugLevel)
