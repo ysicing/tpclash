@@ -14,7 +14,6 @@ type TPClashConf struct {
 	ClashConfig string
 	ClashUI     string
 
-	ClashUser      string
 	HijackIP       []net.IP
 	DisableExtract bool
 	AutoExit       bool
@@ -37,7 +36,8 @@ func ParseClashConf() (*ClashConf, error) {
 	interfaceName := viper.GetString("interface-name")
 	tunEnabled := viper.GetBool("tun.enable")
 	tunAutoRoute := viper.GetBool("tun.auto-route")
-	metaIPtables := viper.GetBool("iptables.enable")
+	tunEBPF := viper.GetStringSlice("ebpf.redirect-to-tun")
+	routingMark := viper.GetInt("routing-mark")
 
 	// common check
 	if strings.ToLower(enhancedMode) != "fake-ip" {
@@ -74,12 +74,16 @@ func ParseClashConf() (*ClashConf, error) {
 		return nil, fmt.Errorf("tun must be enabled in tun mode(tun.enable)")
 	}
 
-	if !tunAutoRoute {
-		return nil, fmt.Errorf("must be enabled auto-route in tun mode(tun.auto-route)")
+if !tunAutoRoute && tunEBPF == nil {
+		return nil, fmt.Errorf("[conf] must be enabled auto-route or ebpf in tun mode(tun.auto-route/ebpf.redirect-to-tun)")
 	}
 
-	if metaIPtables {
-		return nil, fmt.Errorf("meta kernel must turn off iptables(iptables.enable)")
+	if tunAutoRoute && tunEBPF != nil {
+		return nil, fmt.Errorf("[conf] cannot enable auto-route and ebpf at the same time(tun.auto-route/ebpf.redirect-to-tun)")
+	}
+
+	if tunEBPF != nil && routingMark == 0 {
+		return nil, fmt.Errorf("[conf] ebpf needs to set routing-mark(routing-mark)")
 	}
 
 	return &ClashConf{
