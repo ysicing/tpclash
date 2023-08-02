@@ -8,17 +8,20 @@ vars:
   BUILD_DATE:
     sh: date '+%F %T'
   PREMIUM_VERSION:
-    sh: curl -sSL https://api.github.com/repos/Dreamacro/clash/releases/tags/premium | jq -r '.name'
-  META_VERSION:
-    sh: curl -sSL https://api.github.com/repos/MetaCubeX/Clash.Meta/releases/latest | jq -r '.name'
+    sh: date +%Y%m%d
 
 tasks:
+  clean:
+    desc: Clean Up Build Cache Files
+    cmds:
+      - rm -rf build static
   mkdir:
     desc: Create Build Dir
     cmds:
-      - mkdir -p build
+      - mkdir -p build static
     status:
       - test -d build
+      - test -d static
 
   download-mmdb:
     desc: Download GeoIP2-CN MMDB
@@ -109,7 +112,7 @@ tasks:
       - |
         GOOS={{.GOOS}} GOARCH={{.GOARCH}} GOARM={{.GOARM}} GOMIPS={{.GOMIPS}} \
         go build -trimpath -o build/tpclash-premium-{{.PLATFORM}} -ldflags \
-        "-w -s -X 'main.build={{.BUILD_DATE}}' -X 'main.commit={{.COMMIT_SHA}}' -X 'main.version={{.VERSION}}' -X 'main.clash={{.PREMIUM_VERSION}}'"
+        "-w -s -X 'main.build={{.BUILD_DATE}}' -X 'main.commit={{.COMMIT_SHA}}' -X 'main.version={{.VERSION}}' -X 'main.clash=latest-{{.PREMIUM_VERSION}}'"
 
   build-tpclash-meta:
     desc: Build TPClash With Clash Meta
@@ -353,7 +356,7 @@ tasks:
 
   default:
     cmds:
-      - rm -rf build static
+      - task: clean
       - task: linux-amd64-premium
       - rm -rf static/yacd static/official
       - rm -rf static
